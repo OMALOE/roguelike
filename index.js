@@ -13,32 +13,31 @@ class Tile {
   }
 
   renderTile() {
-    if (!this.tileEl) {
-      this.tileEl = document.createElement("div");
-      this.tileEl.classList.add("tile");
-      this.tileEl.classList.add(this.tileType);
-      this.tileEl.setAttribute(
-        "data-coords",
-        `${this.coords.x};${this.coords.y}`
-      );
-      this.tileEl.style.left = this.coords.x * 50 + "px";
-      this.tileEl.style.top = this.coords.y * 50 + "px";
-      $(".field")[0].append(this.tileEl);
-    }
+    // if (!this.tileEl) {
+    this.tileEl = document.createElement("div");
+    this.tileEl.classList.add("tile");
+    this.tileEl.classList.add(this.tileType);
+    this.tileEl.setAttribute(
+      "data-coords",
+      `${this.coords.x};${this.coords.y}`
+    );
+    this.tileEl.style.left = this.coords.x * 50 + "px";
+    this.tileEl.style.top = this.coords.y * 50 + "px";
+    $(".field")[0].append(this.tileEl);
+    // }
 
-    this.tileEl.replaceChildren();
-    this.tileEl.classList.remove("tileP");
-    this.tileEl.classList.remove("tileE");
-    this.tileEl.classList.remove("tileHP");
-    this.tileEl.classList.remove("tileSW");
+    // this.tileEl.replaceChildren();
+    // this.tileEl.classList.remove("tileP");
+    // this.tileEl.classList.remove("tileE");
+    // this.tileEl.classList.remove("tileHP");
+    // this.tileEl.classList.remove("tileSW");
+    if (this.item) {
+      this.tileEl.classList.add(this.item.type);
+    }
 
     if (this.entity) {
       this.tileEl.classList.add(this.entity.type);
       this.tileEl.appendChild(this.entity.healthBar);
-    }
-
-    if (this.item) {
-      this.tileEl.classList.add(this.item.type);
     }
   }
 }
@@ -72,8 +71,6 @@ class Entity {
 
     this.currentTile = tile;
 
-    console.log(tile);
-
     let healthBar = document.createElement("div");
     healthBar.className = "health";
     this.healthBar = healthBar;
@@ -101,20 +98,40 @@ class Entity {
   }
 
   destroyEntity() {
+    let sound = new Audio("yoda.mp3");
+    sound.play();
     this.currentTile.entity = null;
     this.currentTile.renderTile();
+
+    if (this.type === "tileP") {
+      alert("game over");
+    }
   }
 
-  dealDamage() {
-    console.log("DAMAGE");
-    for (const e of entities) {
-      console.log(Math.abs(e.X - this.X), Math.abs(e.Y - this.Y));
+  dealDamage(target = "tileE") {
+    const deltas = [
+      { x: 1, y: 0 },
+      { x: 1, y: 1 },
+      { x: 1, y: -1 },
 
-      if (e.X === this.X && e.Y === this.Y) continue;
+      { x: -1, y: 0 },
+      { x: -1, y: 1 },
+      { x: -1, y: -1 },
 
-      if (Math.abs(e.X - this.X) <= 1 && Math.abs(e.Y - this.Y) <= 1) {
-        e.setHealth(-this.damage);
-      }
+      { x: 0, y: 1 },
+      { x: 0, y: -1 },
+    ];
+
+    for (const delta of deltas) {
+      let enemy =
+        game.field[this.currentTile.coords.y + delta.y][
+          this.currentTile.coords.x + delta.x
+        ].entity;
+
+      if (!enemy || enemy.type !== target) continue;
+
+      enemy.health = -this.damage;
+      console.log("DAMAGE HERO");
     }
   }
 
@@ -134,14 +151,19 @@ class Entity {
     this.currentTile.entity = null;
     nextTile.entity = this;
 
-    if (nextTile.item && this.type === "tileP") {
-      nextTile.item.affectEntity(this);
-      nextTile.item = null;
+    if (this.type === "tileE") {
+      try {
+        this.dealDamage("tileP");
+      } catch (error) {}
     }
 
-    this.currentTile.renderTile();
-    nextTile.renderTile();
+    // this.currentTile.renderTile();
+    // nextTile.renderTile();
     this.currentTile = nextTile;
+  }
+
+  chaoticMovement() {
+    this.move(getRandomNumber(-1, 1), getRandomNumber(-1, 1));
   }
 }
 
@@ -177,32 +199,36 @@ class Hero extends Entity {
     });
   }
 
-  dealDamage() {
-    console.log("DAMAGE HERO");
+  move(deltaX, deltaY) {
+    let newCoordY = this.currentTile.coords.y + deltaY;
+    let newCoordX = this.currentTile.coords.x + deltaX;
 
-    const deltas = [
-      { x: 1, y: 0 },
-      { x: 1, y: 1 },
-      { x: 1, y: -1 },
+    if (newCoordY < 0 || newCoordY > 23) return;
+    if (newCoordX < 0 || newCoordX > 39) return;
 
-      { x: -1, y: 0 },
-      { x: -1, y: 1 },
-      { x: -1, y: -1 },
+    let nextTile = game.field[newCoordY][newCoordX];
+    if (nextTile.tileType === "tileW" || nextTile.entity) return;
 
-      { x: 0, y: 1 },
-      { x: 0, y: -1 },
-    ];
+    // this.Y = newCoordY;
+    // this.X = newCoordX;
+    // this.currentTile = field[this.Y][this.X].className.replace("tile", "");
+    this.currentTile.entity = null;
+    nextTile.entity = this;
 
-    for (const delta of deltas) {
-      let enemy =
-        game.field[this.currentTile.coords.y + delta.y][
-          this.currentTile.coords.x + delta.x
-        ].entity;
-
-      if (!enemy) continue;
-
-      enemy.health = -this.damage;
+    if (nextTile.item) {
+      nextTile.item.affectEntity(this);
+      nextTile.item = null;
     }
+
+    if (this.type === "tileE") {
+      this.dealDamage("tileP");
+    }
+
+    // this.currentTile.renderTile();
+    // nextTile.renderTile();
+    this.currentTile = nextTile;
+
+    game.makeMove();
   }
 }
 
@@ -226,22 +252,30 @@ class Game {
     this.placeItems(new Item("tileSW", "buff", 30, "damage"), 2);
 
     this.placeHero();
-    this.placeEnemies();
+    this.placeEnemies(10);
 
     this.renderField();
   }
 
-  placeEnemies() {
+  makeMove() {
+    for (const row of this._field) {
+      for (const tile of row) {
+        if (tile.entity && tile.entity.type === "tileE") {
+          tile.entity.chaoticMovement();
+        }
+      }
+    }
+
+    this.renderField();
+  }
+
+  placeEnemies(n) {
     //отфильтровать тайлы не стены и назначить на рандомные по индексу
-    let emptyTiles = this._getNEmptyTiles(10);
+    let emptyTiles = this._getNEmptyTiles(n);
 
     for (const tile of emptyTiles) {
-      this._field[tile.coords.y][tile.coords.x].entity = new Entity(
-        tile.coords.x,
-        tile.coords.y,
-        "tileE",
-        tile
-      );
+      let entity = new Entity(tile.coords.x, tile.coords.y, "tileE", tile);
+      this._field[tile.coords.y][tile.coords.x].entity = entity;
     }
   }
 
@@ -296,7 +330,7 @@ class Game {
         tile.renderTile();
       }
     }
-    console.log(this._field);
+    // console.log(this._field);
   }
 
   generateField() {
