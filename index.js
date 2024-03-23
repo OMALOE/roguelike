@@ -101,8 +101,8 @@ class Entity {
   }
 
   destroyEntity() {
-    field[this.Y][this.X].replaceChildren();
-    field[this.Y][this.X].className = "tile " + this.currentTile;
+    this.currentTile.entity = null;
+    this.currentTile.renderTile();
   }
 
   dealDamage() {
@@ -154,6 +154,7 @@ class Hero extends Entity {
 
   initMovement() {
     window.addEventListener("keydown", (e) => {
+      e.preventDefault();
       switch (e.key) {
         case "w":
           this.move(0, -1);
@@ -175,6 +176,34 @@ class Hero extends Entity {
       }
     });
   }
+
+  dealDamage() {
+    console.log("DAMAGE HERO");
+
+    const deltas = [
+      { x: 1, y: 0 },
+      { x: 1, y: 1 },
+      { x: 1, y: -1 },
+
+      { x: -1, y: 0 },
+      { x: -1, y: 1 },
+      { x: -1, y: -1 },
+
+      { x: 0, y: 1 },
+      { x: 0, y: -1 },
+    ];
+
+    for (const delta of deltas) {
+      let enemy =
+        game.field[this.currentTile.coords.y + delta.y][
+          this.currentTile.coords.x + delta.x
+        ].entity;
+
+      if (!enemy) continue;
+
+      enemy.health = -this.damage;
+    }
+  }
 }
 
 class Game {
@@ -194,9 +223,10 @@ class Game {
     this.generatePaths();
 
     this.placeItems(new Item("tileHP", "buff", 20, "health"), 10);
-    this.placeItems(new Item("tileSW", "buff", 10, "damage"), 2);
+    this.placeItems(new Item("tileSW", "buff", 30, "damage"), 2);
 
     this.placeHero();
+    this.placeEnemies();
 
     this.renderField();
   }
@@ -206,7 +236,12 @@ class Game {
     let emptyTiles = this._getNEmptyTiles(10);
 
     for (const tile of emptyTiles) {
-      this._field[randomTile.coords.y][randomTile.coords.x].tileType = tileName;
+      this._field[tile.coords.y][tile.coords.x].entity = new Entity(
+        tile.coords.x,
+        tile.coords.y,
+        "tileE",
+        tile
+      );
     }
   }
 
