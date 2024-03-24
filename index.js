@@ -177,20 +177,21 @@ class Hero extends Entity {
   initMovement() {
     window.addEventListener("keydown", (e) => {
       e.preventDefault();
-      switch (e.key) {
-        case "w":
+      console.log(e);
+      switch (e.code) {
+        case "KeyW":
           this.move(0, -1);
           break;
-        case "a":
+        case "KeyA":
           this.move(-1, 0);
           break;
-        case "s":
+        case "KeyS":
           this.move(0, 1);
           break;
-        case "d":
+        case "KeyD":
           this.move(1, 0);
           break;
-        case " ":
+        case "Space":
           this.dealDamage();
           break;
         default:
