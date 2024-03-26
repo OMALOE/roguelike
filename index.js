@@ -131,7 +131,6 @@ class Entity {
       if (!enemy || enemy.type !== target) continue;
 
       enemy.health = -this.damage;
-      console.log("DAMAGE HERO");
     }
   }
 
@@ -177,7 +176,6 @@ class Hero extends Entity {
   initMovement() {
     window.addEventListener("keydown", (e) => {
       e.preventDefault();
-      console.log(e);
       switch (e.code) {
         case "KeyW":
           this.move(0, -1);
@@ -210,9 +208,6 @@ class Hero extends Entity {
     let nextTile = game.field[newCoordY][newCoordX];
     if (nextTile.tileType === "tileW" || nextTile.entity) return;
 
-    // this.Y = newCoordY;
-    // this.X = newCoordX;
-    // this.currentTile = field[this.Y][this.X].className.replace("tile", "");
     this.currentTile.entity = null;
     nextTile.entity = this;
 
@@ -225,8 +220,6 @@ class Hero extends Entity {
       this.dealDamage("tileP");
     }
 
-    // this.currentTile.renderTile();
-    // nextTile.renderTile();
     this.currentTile = nextTile;
 
     game.makeMove();
@@ -314,13 +307,6 @@ class Game {
     let shuffled = temp.sort(() => 0.5 - Math.random());
 
     return shuffled.slice(0, n);
-    // return temp;
-  }
-
-  moveEntities() {
-    // отфильтровать все тайлы на которых есть ентити
-    //сделать интервал по которому все ентити раз в 500мс передвигаются
-    // занулить ентити тайла если убили
   }
 
   renderField() {
@@ -331,7 +317,6 @@ class Game {
         tile.renderTile();
       }
     }
-    // console.log(this._field);
   }
 
   generateField() {
@@ -401,148 +386,6 @@ class Game {
 const game = new Game();
 game.init();
 
-function generateField() {
-  let field = [];
-
-  //   for (let i = 0; i < 24; i++) {
-  //     let tile = document.createElement("div");
-  //     tile.classList.add("tile");
-  //     field.push(new Array(40).fill(tile));
-  //   }
-
-  //   console.log(field);
-  for (let ri = 0; ri < 24; ri++) {
-    let row = [];
-    for (let ti = 0; ti < 40; ti++) {
-      let tile = document.createElement("div");
-      tile.classList.add("tileW");
-      tile.classList.add("tile");
-      tile.setAttribute("data-coords", `${ti};${ri}`);
-      tile.style.left = ti * 50 + "px";
-      tile.style.top = ri * 50 + "px";
-      row.push(tile);
-    }
-    field.push(row);
-  }
-
-  for (let i = 0; i < getRandomNumber(5, 10); i++) {
-    field = generateRoom(field);
-  }
-
-  field = generatePaths(field);
-
-  field = placeItems(field, "tileHP", 10);
-  field = placeItems(field, "tileSW", 2);
-
-  return field;
-}
-
-// let field = generateField();
-
-// let entities = initEntities(field, 11);
-
-// renderField();
-
-function generateRoom(field = []) {
-  let sizeX = getRandomNumber(3, 8);
-  let sizeY = getRandomNumber(3, 8);
-
-  let locationX = getRandomNumber(0, 39 - sizeX); //вычитание чтоб точно убедиться, что комнаты будут нужного размера
-  let locationY = getRandomNumber(0, 23 - sizeY);
-
-  for (let ri = 0; ri < sizeY; ri++) {
-    for (let ti = 0; ti < sizeX; ti++) {
-      if (
-        ri + locationY > field.length - 1 ||
-        ti + locationX > field[0].length - 1
-      ) {
-        continue;
-      }
-      let pathTile = field[ri + locationY][ti + locationX];
-      pathTile.className = "tile";
-    }
-  }
-
-  return field;
-}
-
-function generatePaths(field = []) {
-  let pathsNum = getRandomNumber(3, 5);
-
-  //по вертикали
-  for (let i = 0; i < pathsNum; i++) {
-    let coord = getRandomNumber(1, 38);
-    for (let i = 0; i < field.length; i++) {
-      let path = field[i][coord];
-      path.className = "tile";
-    }
-  }
-
-  //по горизонтали
-  pathsNum = getRandomNumber(3, 5);
-  for (let i = 0; i < pathsNum; i++) {
-    let coord = getRandomNumber(1, 22);
-    for (let i = 0; i < field.length; i++) {
-      for (let n = 0; n < field[0].length; n++) {
-        let path = field[coord][n];
-        path.className = "tile";
-      }
-    }
-  }
-
-  return field;
-}
-
-function placeItems(field, tileName, count) {
-  for (let i = 0; i < count; i++) {
-    let found = false;
-    while (!found) {
-      let coordX = getRandomNumber(0, 39);
-      let coordY = getRandomNumber(0, 23);
-
-      if (field[coordY][coordX].className !== "tile") continue;
-
-      field[coordY][coordX].classList.add(tileName);
-      found = true;
-    }
-  }
-
-  return field;
-}
-
-function initEntities(field, count) {
-  let heroPlaced = false;
-  let entities = [];
-
-  for (let i = 0; i < count; i++) {
-    let found = false;
-    while (!found) {
-      let coordX = getRandomNumber(0, 39);
-      let coordY = getRandomNumber(0, 23);
-
-      if (field[coordY][coordX].className !== "tile") continue;
-      if (!heroPlaced) {
-        entities.push(new Hero(coordX, coordY, "tileP"));
-        heroPlaced = true;
-      } else {
-        entities.push(new Entity(coordX, coordY, "tileE"));
-      }
-
-      found = true;
-    }
-  }
-
-  return entities;
-}
-
 function getRandomNumber(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-function renderField() {
-  for (const row of field) {
-    for (const tile of row) {
-      $(".field")[0].append(tile);
-    }
-  }
 }
